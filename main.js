@@ -14,8 +14,8 @@ async function run() {
 
     const baseUrl = 'https://app.apollo.io/#/people?page=1&tour=true&sortAscending=false&personLocations[]=Montreal%2C%20Canada&sortByField=organization_estimated_number_employees&personTitles[]=owner&personTitles[]=founder&personTitles[]=founder%20and%20ceo&personTitles[]=director&personTitles[]=hr%20manager&personTitles[]=talent%20acquisition%20specialist&personSeniorities[]=owner&personSeniorities[]=founder&personSeniorities[]=c_suite&personSeniorities[]=director&personSeniorities[]=manager&organizationNumEmployeesRanges[]=51%2C100&organizationNumEmployeesRanges[]=101%2C200&organizationNumEmployeesRanges[]=201%2C500&organizationNumEmployeesRanges[]=501%2C1000&organizationNumEmployeesRanges[]=1001%2C2000&organizationNumEmployeesRanges[]=2001%2C5000&organizationNumEmployeesRanges[]=5001%2C10000&organizationNumEmployeesRanges[]=10001&organizationNumEmployeesRanges[]=21%2C50&includedOrganizationKeywordFields[]=tags&includedOrganizationKeywordFields[]=name&organizationIndustryTagIds[]=5567ce2673696453d95c0000';
     const csvUrl = 'NameOfCSV.csv';
-    const email = 'fandrianarisata2@gmail.com';
-    const password = 'codeApollo&2608';
+    const email = 'aricette@rfc-production.com';
+    const password = 'codeapollo0810';
 
     // Start the Puppeteer browser
 
@@ -35,9 +35,9 @@ async function run() {
     await page.type('input[name="email"]', email);
     await page.type('input[name="password"]', password);
     await page.click('button[type="submit"]');
-    await page.waitForTimeout(5000);
+    await new Promise(resolve => setTimeout(resolve, 10000));
     await page.goto(baseUrl);
-    await page.waitForTimeout(5000);
+    await new Promise(resolve => setTimeout(resolve, 10000));
     const totalText = await page.evaluate(() => {
         const targetElement = Array.from(document.querySelectorAll('a')).find(e => e.textContent.trim().startsWith('Total'));
         return targetElement ? targetElement.textContent.trim() : null;
