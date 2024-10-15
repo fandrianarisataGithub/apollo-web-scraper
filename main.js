@@ -1,5 +1,6 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
+require('dotenv').config();
 
 async function run() {
 
@@ -14,8 +15,8 @@ async function run() {
 
     const baseUrl = 'https://app.apollo.io/#/people?page=1&tour=true&sortAscending=false&personLocations[]=Montreal%2C%20Canada&sortByField=organization_estimated_number_employees&personTitles[]=owner&personTitles[]=founder&personTitles[]=founder%20and%20ceo&personTitles[]=director&personTitles[]=hr%20manager&personTitles[]=talent%20acquisition%20specialist&personSeniorities[]=owner&personSeniorities[]=founder&personSeniorities[]=c_suite&personSeniorities[]=director&personSeniorities[]=manager&organizationNumEmployeesRanges[]=51%2C100&organizationNumEmployeesRanges[]=101%2C200&organizationNumEmployeesRanges[]=201%2C500&organizationNumEmployeesRanges[]=501%2C1000&organizationNumEmployeesRanges[]=1001%2C2000&organizationNumEmployeesRanges[]=2001%2C5000&organizationNumEmployeesRanges[]=5001%2C10000&organizationNumEmployeesRanges[]=10001&organizationNumEmployeesRanges[]=21%2C50&includedOrganizationKeywordFields[]=tags&includedOrganizationKeywordFields[]=name&organizationIndustryTagIds[]=5567ce2673696453d95c0000';
     const csvUrl = 'NameOfCSV.csv';
-    const email = 'aricette@rfc-production.com';
-    const password = 'codeapollo0810';
+    const email = process.env.EMAIL;
+    const password = process.env.PASSWORD;
 
     // Start the Puppeteer browser
 
@@ -39,9 +40,10 @@ async function run() {
     await page.goto(baseUrl);
     await new Promise(resolve => setTimeout(resolve, 10000));
     const totalText = await page.evaluate(() => {
-        const targetElement = Array.from(document.querySelectorAll('a')).find(e => e.textContent.trim().startsWith('Total'));
+        const targetElement = document.querySelector('.zp_nashx .zp_Hypuh .zp_tZMYK .zp_mE7no');
         return targetElement ? targetElement.textContent.trim() : null;
     });
+    //console.log(totalText)
     
     let totalItems = 0;
     if (totalText) {
@@ -58,16 +60,18 @@ async function run() {
         let allData = [];
         for (let i = 1; i <= totalPages; i++) {
             const pageUrl = `${baseUrl}&page=${i}`;
-            console.log(`Scraping page: ${pageUrl}`);
+            //console.log(`Scraping page: ${pageUrl}`);
             await page.goto(pageUrl);
-            await page.waitForSelector('tbody', { visible: true });
+            await page.waitForSelector('.zp_tFLCQ', { visible: true });
 
-            const data = await page.$$eval('tbody', tbodies => tbodies.map(tbody => {
-                const tr = tbody.querySelector('tr');
-                const tdName = tr ? tr.querySelector('td') : null;
+            const data = await page.$$eval('.zp_tFLCQ', tbodies => tbodies.map(tbody => {
+                const tr = tbody.querySelector('div[role=row]');
+                tr.style.border = '1px solid red'
+                const tdName = tr ? tr.querySelector('div[role=gridcell] .zp_TPCm2 a') : null;
+                tdName.style.border = '1px solid green'
                 let name = tdName ? tdName.innerText.trim() : null;
                 name = name.replace("------", "").trim();
-
+                
                 let parts = name.split(' ');
                 let firstName = parts.shift();
                 let lastName = parts.join(' '); 
@@ -77,41 +81,46 @@ async function run() {
                 firstName = quote(firstName);
                 lastName = quote(lastName);
                 fullName = quote(name); 
-        
-                const tdJobTitle = tr ? tr.querySelector('td:nth-child(2)') : null;
+                
+                const tdJobTitle = tr ? tr.querySelector('div[role=gridcell]:nth-child(2) .zp_xvo3G') : null;
                 let jobTitle = tdJobTitle ? tdJobTitle.innerText.trim() : '';
                 jobTitle = quote(jobTitle);
-        
-                const tdCompanyName = tr ? tr.querySelector('td:nth-child(3)') : null;
+                const tdCompanyName = tr ? tr.querySelector('div[role=gridcell]:nth-child(2) .zp_xvo3G') : null;
                 let companyName = tdCompanyName ? tdCompanyName.innerText.trim() : '';
                 companyName = quote(companyName);
         
-                const tdLocation = tr ? tr.querySelector('td:nth-child(5) .zp_Y6y8d') : null;
+                const tdLocation = tr ? tr.querySelector('div[role=gridcell]:nth-child(8) .zp_xvo3G') : null;
                 let location = tdLocation ? tdLocation.innerText.trim() : '';
                 location = quote(location);
         
-                const tdEmployeeCount = tr ? tr.querySelector('td:nth-child(6)') : null;
+                const tdEmployeeCount = tr ? tr.querySelector('div[role=gridcell]:nth-child(9) .zp_xvo3G') : null;
                 let employeeCount = tdEmployeeCount ? tdEmployeeCount.innerText.trim() : '';
                 employeeCount = quote(employeeCount);
-        
-                const tdPhone = tr ? tr.querySelector('td:nth-child(7)') : null;
+                // click on the mail button
+                /*const mailBtn = tr ? tr.querySelector('div[role=gridcell]:nth-child(4) button') : null
+                mailBtn.click();
+                // Attends 5 secondes pour que les emails apparaissent
+                setTimeout(function(){}, 5000);
+                const email = tr ? tr.querySelector('div[role=gridcell]:nth-child(4) .zp_xvo3G') : null
+                console.log(email)*/
+                /*const tdPhone = tr ? tr.querySelector('td:nth-child(7)') : null;
                 let phone = tdPhone ? tdPhone.innerText.trim() : '';
                 phone = phone.replace(/\D/g, ''); 
                 phone = phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3'); 
-                phone = quote(phone);
+                phone = quote(phone);*/
         
-                const tdIndustry = tr ? tr.querySelector('td:nth-child(8)') : null;
+                const tdIndustry = tr ? tr.querySelector('div[role=gridcell]:nth-child(10) .zp_xvo3G') : null;
                 let industry = tdIndustry ? tdIndustry.innerText.trim() : '';
                 industry = quote(industry);
         
-                const tdKeywords = tr ? tr.querySelector('td:nth-child(9)') : null;
+                const tdKeywords = tr ? tr.querySelector('div[role=gridcell]:nth-child(11) .zp_xvo3G') : null;
                 let keywords = tdKeywords ? tdKeywords.innerText.trim() : '';
                 keywords = quote(keywords);
         
                 let facebookUrl = '', twitterUrl = '', companyLinkedinUrl = '', companyUrl = '';
-        
-                if (tdCompanyName) {
-                    const links = tdCompanyName.querySelectorAll('a[href]');
+                const tdCompanyNameTDiv = tr ? tr.querySelector('div[role=gridcell]:nth-child(2)') : null;
+                if (tdCompanyNameTDiv) {
+                    const links = tdCompanyNameTDiv.querySelectorAll('a[href]');
                     links.forEach(link => {
                         const href = link.href.trim();
                         if (href.includes('facebook.com')) facebookUrl = quote(href);
@@ -132,7 +141,7 @@ async function run() {
                     companyName: companyName, 
                     location: location,
                     employeeCount: employeeCount, 
-                    phone: phone,
+                    //phone: phone,
                     industry: industry, 
                     firstHref: quote(firstHref), 
                     linkedinUrl: quote(linkedinUrl),
@@ -145,7 +154,8 @@ async function run() {
             }));
             allData = allData.concat(data);
         }  
-        async function processPerson(person, newPage) {
+        console.log(allData)
+        /*async function processPerson(person, newPage) {
             console.log(`Processing person: ${person.name}`);
             const cleanedUrl = person.firstHref.replace(/"/g, '');
             console.log(`Navigating to cleaned URL: ${cleanedUrl}`);
@@ -166,9 +176,9 @@ async function run() {
                 console.error(`Error processing ${person.name} at ${cleanedUrl}: ${error}`);
                 person.emails = [''];
             }
-        }
+        }*/
         
-        const batchSize = 5; 
+        /*const batchSize = 5; 
         for (let i = 0; i < allData.length; i += batchSize) {
             const batch = allData.slice(i, i + batchSize);
             console.log(`Processing batch from index ${i} to ${i + batchSize - 1}`);
@@ -195,11 +205,11 @@ async function run() {
             return `${person.firstName},${person.lastName},${person.fullName},${person.jobTitle},${person.companyName},${person.location},${person.employeeCount},${person.phone},${person.industry},${person.firstHref},${person.linkedinUrl},${person.facebookUrl},${person.twitterUrl},${person.companyLinkedinUrl},${person.companyUrl},${person.keywords},${paddedEmails.join(',')}`;
         }).join('\n');
 
-        fs.writeFileSync(csvUrl, csvHeader + csvRows);
+        fs.writeFileSync(csvUrl, csvHeader + csvRows);*/
     } else {
         console.log('Element not found');
     }
-    await browser.close();
+    /*await browser.close();*/
     console.timeEnd("ScriptRunTime");
 }
 run().catch(console.error);
