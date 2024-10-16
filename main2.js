@@ -5,7 +5,6 @@ require('dotenv').config();
 async function run() {
 
     // How to use this scraper!
-
     // Step 1: Make sure to have Node.js installed on your computer
     // Step 2: Install the following packages by running the following commands in your terminal: npm install puppeteer fs
     // Step 3: Copy and paste this entire script into a new file called main.js
@@ -19,7 +18,6 @@ async function run() {
     const password = process.env.PASSWORD;
 
     // Start the Puppeteer browser
-
     console.time("ScriptRunTime");
     const browser = await puppeteer.launch({
         headless: false, // Set to true to run headless
@@ -29,7 +27,7 @@ async function run() {
     const page = await browser.newPage();
     // Set custom User-Agent
     await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0");
-    
+
     await page.goto('https://app.apollo.io/#/login');
     await page.waitForSelector('input[name="email"]', { visible: true });
     await page.waitForSelector('input[name="password"]', { visible: true });
@@ -43,7 +41,6 @@ async function run() {
         const targetElement = document.querySelector('.zp_nashx .zp_Hypuh .zp_tZMYK .zp_mE7no');
         return targetElement ? targetElement.textContent.trim() : null;
     });
-    //console.log(totalText)
     
     let totalItems = 0;
     if (totalText) {
@@ -60,18 +57,16 @@ async function run() {
         let allData = [];
         for (let i = 1; i <= totalPages; i++) {
             const pageUrl = `${baseUrl}&page=${i}`;
-            //console.log(`Scraping page: ${pageUrl}`);
             await page.goto(pageUrl);
             await page.waitForSelector('.zp_tFLCQ', { visible: true });
 
             const data = await page.$$eval('.zp_tFLCQ', tbodies => tbodies.map(tbody => {
                 const trs = tbody.querySelectorAll('div[role=row]');
-                //tr.style.border = '1px solid red'
                 let arrayData = []
                 for (let index = 0; index < trs.length; index++) {
                     const tr = trs[index];
                     const tdName = tr ? tr.querySelector('div[role=gridcell] .zp_TPCm2 a') : null;
-                    tdName.style.border = '1px solid green'
+                    tdName.style.border = '1px solid green';
                     let name = tdName ? tdName.innerText.trim() : null;
                     name = name.replace("------", "").trim();
                     
@@ -83,7 +78,7 @@ async function run() {
 
                     firstName = quote(firstName);
                     lastName = quote(lastName);
-                    fullName = quote(name); 
+                    const fullName = quote(name); 
                     
                     const tdJobTitle = tr ? tr.querySelector('div[role=gridcell]:nth-child(2) .zp_xvo3G') : null;
                     let jobTitle = tdJobTitle ? tdJobTitle.innerText.trim() : '';
@@ -99,18 +94,6 @@ async function run() {
                     const tdEmployeeCount = tr ? tr.querySelector('div[role=gridcell]:nth-child(9) .zp_xvo3G') : null;
                     let employeeCount = tdEmployeeCount ? tdEmployeeCount.innerText.trim() : '';
                     employeeCount = quote(employeeCount);
-                    // click on the mail button
-                    /*const mailBtn = tr ? tr.querySelector('div[role=gridcell]:nth-child(4) button') : null
-                    mailBtn.click();
-                    // Attends 5 secondes pour que les emails apparaissent
-                    setTimeout(function(){}, 5000);
-                    const email = tr ? tr.querySelector('div[role=gridcell]:nth-child(4) .zp_xvo3G') : null
-                    console.log(email)*/
-                    /*const tdPhone = tr ? tr.querySelector('td:nth-child(7)') : null;
-                    let phone = tdPhone ? tdPhone.innerText.trim() : '';
-                    phone = phone.replace(/\D/g, ''); 
-                    phone = phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3'); 
-                    phone = quote(phone);*/
             
                     const tdIndustry = tr ? tr.querySelector('div[role=gridcell]:nth-child(10) .zp_xvo3G') : null;
                     let industry = tdIndustry ? tdIndustry.innerText.trim() : '';
@@ -136,7 +119,7 @@ async function run() {
                     const firstHref = tbody.querySelector('a[href]') ? tbody.querySelector('a[href]').href : '';
                     const linkedinUrl = tdName && tdName.querySelector('a[href*="linkedin.com/in"]') ? tdName.querySelector('a[href*="linkedin.com/in"]').href : '';
                     
-                    arrayData.push( { 
+                    arrayData.push({
                         firstName: firstName, 
                         lastName: lastName, 
                         fullName: fullName,
@@ -144,7 +127,6 @@ async function run() {
                         companyName: companyName, 
                         location: location,
                         employeeCount: employeeCount, 
-                        //phone: phone,
                         industry: industry, 
                         firstHref: quote(firstHref), 
                         linkedinUrl: quote(linkedinUrl),
@@ -155,75 +137,24 @@ async function run() {
                         keywords: keywords,
                     });
                 }
-                return arrayData 
+                return arrayData;
             }));
             allData = allData.concat(data);
-        }  
-        let finalJson = []
-        allData.forEach((item) => {
-            finalJson = finalJson.concat(item);
-            //console.log(item)
-            /*const csvHeader = "First Name,Last Name,Job Title,Company Name,Location,Employee Count,Industry,LinkedIn URL,Keywords\n";
-            const csvRows = allData.map(person => {
-                return `${person.firstName},${person.lastName},${person.jobTitle},${person.companyName},${person.location},${person.employeeCount},${person.industry},${person.linkedinUrl},${person.keywords}`;
-            }).join('\n');
-
-            // Créer et écrire dans le fichier CSV
-            fs.writeFileSync(csvFile, csvHeader + csvRows, 'utf8');
-            console.log(`Les données ont été sauvegardées dans le fichier ${csvFile}`);*/
-        })
-        console.log(finalJson);
-
-        function convertJsonToCsv(jsonData) {
-            const header = Object.keys(jsonData[0]).join(','); // Extraire les en-têtes des colonnes
-            const csvRows = jsonData.map(obj => {
-                return Object.values(obj).map(value => {
-                    // Échapper les valeurs contenant des virgules ou des guillemets
-                    const escapedValue = typeof value === 'string' && value.includes(',')
-                        ? `"${value.replace(/"/g, '""')}"`
-                        : value;
-                    return escapedValue;
-                }).join(',');
-            });
-        
-            return [header, ...csvRows].join('\n');
         }
 
-        const csvData = convertJsonToCsv(finalJson);
-        fs.writeFileSync(csvUrl, csvData, 'utf8');
-        console.log(`Les données ont été sauvegardées dans le fichier ${csvUrl}`);
-        
-        /*for (let i = 0; i < allData.length; i += batchSize) {
-            const batch = allData.slice(i, i + batchSize);
-            console.log(`Processing batch from index ${i} to ${i + batchSize - 1}`);
-          
-            await Promise.all(batch.map(async person => { 
-                const newPage = await browser.newPage(); 
-                try {
-                    return await processPerson(person, newPage); 
-                } catch (error) {
-                    console.error(`Error processing ${person.name}: ${error}`);
-                } finally {
-                    await newPage.close(); 
-                }
-            }));
-            console.log(`Completed batch from index ${i} to ${i + batchSize - 1}`);
-        }
-
-        const maxEmails = allData.reduce((max, p) => Math.max(max, p.emails.length), 0);
-        const emailHeaders = Array.from({ length: maxEmails }, (_, i) => `Email ${i + 1}`).join(',');
-        const csvHeader = `First Name,Last Name,Full Name,Job Title,Company Name,Location,Employee Count,Phone,Industry,URL,LinkedIn URL,Facebook URL,Twitter URL,Company LinkedIn URL,Company URL,Keywords,${emailHeaders}\n`;
-
+        const csvHeader = "First Name,Last Name,Full Name,Job Title,Company Name,Location,Employee Count,Industry,LinkedIn URL,Keywords\n";
         const csvRows = allData.map(person => {
-            const paddedEmails = [...person.emails, ...Array(maxEmails - person.emails.length).fill('')];
-            return `${person.firstName},${person.lastName},${person.fullName},${person.jobTitle},${person.companyName},${person.location},${person.employeeCount},${person.phone},${person.industry},${person.firstHref},${person.linkedinUrl},${person.facebookUrl},${person.twitterUrl},${person.companyLinkedinUrl},${person.companyUrl},${person.keywords},${paddedEmails.join(',')}`;
+            return `${person.firstName},${person.lastName},${person.fullName},${person.jobTitle},${person.companyName},${person.location},${person.employeeCount},${person.industry},${person.linkedinUrl},${person.keywords}`;
         }).join('\n');
 
-        fs.writeFileSync(csvUrl, csvHeader + csvRows);*/
-    } else {
-        console.log('Element not found');
+        // Create and write into CSV file
+        fs.writeFileSync(csvUrl, csvHeader + csvRows, 'utf8');
+        console.log('Data has been saved to the CSV file.');
     }
-    /*await browser.close();*/
+
+    await browser.close();
     console.timeEnd("ScriptRunTime");
 }
-run().catch(console.error);
+
+run().catch(error => console.error('Error during script execution', error));
+
